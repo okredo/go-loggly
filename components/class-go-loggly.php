@@ -153,3 +153,18 @@ class GO_Loggly
 		return $fetch_response_pager;
 	}//end search
 }//end class
+
+/**
+ * Singleton
+ */
+function go_loggly()
+{
+	global $go_loggly;
+
+	if ( ! isset( $go_loggly ) )
+	{
+		$go_loggly = new GO_Loggly();
+	}//end if
+
+	return $go_loggly;
+} // END go_loggly
