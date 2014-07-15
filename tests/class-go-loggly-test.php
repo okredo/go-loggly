@@ -22,7 +22,7 @@ class GO_Loggly_Test extends WP_UnitTestCase
 	 */
 	public function test_loggly_tagged_json_entry()
 	{
-		$response = go_loggly()->inputs( array( 'message' => 'hello world!', 'from' => 'gomtest' ), array( 'tagA', 'tagB' ) );
+		$response = go_loggly()->inputs( array( 'message' => 'hello world!', 'from' => 'gigaom' ), array( 'tagA', 'tagB' ) );
 		if ( 200 == wp_remote_retrieve_response_code( $response ) )
 		{
 			$this->assertEquals( 'OK', $response['response']['message'] );
@@ -37,7 +37,7 @@ class GO_Loggly_Test extends WP_UnitTestCase
 	 */
 	public function test_loggly_tagless_json_entry()
 	{
-		$response = go_loggly()->inputs( array( 'message' => '(Not tagged) hello world!', 'from' => 'gomtest' ) );
+		$response = go_loggly()->inputs( array( 'message' => '(Not tagged) hello world!', 'from' => 'gigaom' ) );
 		if ( 200 == wp_remote_retrieve_response_code( $response ) )
 		{
 			$this->assertEquals( 'OK', $response['response']['message'] );
@@ -52,7 +52,7 @@ class GO_Loggly_Test extends WP_UnitTestCase
 	 */
 	public function test_loggly_tagged_string_entry()
 	{
-		$response = go_loggly()->inputs( 'hello world! from gomtest', array( 'tagA', 'tagB' ) );
+		$response = go_loggly()->inputs( 'hello world! from gigaom', array( 'tagA', 'tagB' ) );
 		if ( 200 == wp_remote_retrieve_response_code( $response ) )
 		{
 			$this->assertEquals( 'OK', $response['response']['message'] );
@@ -67,7 +67,7 @@ class GO_Loggly_Test extends WP_UnitTestCase
 	 */
 	public function test_loggly_tagless_string_entry()
 	{
-		$response = go_loggly()->inputs( '(Not tagged) hello world! from gomtest' );
+		$response = go_loggly()->inputs( '(Not tagged) hello world! from gigaom' );
 		if ( 200 == wp_remote_retrieve_response_code( $response ) )
 		{
 			$this->assertEquals( 'OK', $response['response']['message'] );
@@ -78,7 +78,7 @@ class GO_Loggly_Test extends WP_UnitTestCase
 	 * test the GO_Loggly::search function
 	 * - search for all entries, using default search facets:
 	 * (Start time for the search: “-24h”;
-	 * End time for the search: Defaults to “now”;
+	 * End time for the search: Defaults to “now”; see https://www.loggly.com/docs/search-query-language/#time
 	 * Descending order;
 	 * Default number of rows returned by search: 50 ... pager handles pulling down the rest.)
 	 *
@@ -87,8 +87,12 @@ class GO_Loggly_Test extends WP_UnitTestCase
 	public function test_loggly_search_all_use_defaults()
 	{
 		// Testing this REST call:
-		// http://gomtest.loggly.com/apiv2/search?q=*
-		$response = go_loggly()->search( '*' );
+		// http://gigaom.loggly.com/apiv2/search?q=*
+		//$response = go_loggly()->search( '*' );
+
+		// note: the above query, in production, will have a count of many thousands of records and pages.
+		// use this next query below to restrict the resultset:
+		$response = go_loggly()->search( '*&from=-30s&until=now' );
 
 		// note: we should expect (if there's data)
 		// $response->count() X 3 assertions in the first loop below, followed by
@@ -124,15 +128,16 @@ class GO_Loggly_Test extends WP_UnitTestCase
 	 * test the GO_Loggly::search function
 	 * - search for all entries, using 'from', 'until' and 'size' 'search' API facets
 	 * - $response is the iterator class
+	 * - https://www.loggly.com/docs/search-query-language/#time
 	 */
 	public function test_loggly_search_all_use_facets()
 	{
 		// Testing this REST call:
-		// http://gomtest.loggly.com/apiv2/search?q=*&from=-7d&until=now&size=4
+		// http://gigaom.loggly.com/apiv2/search?q=*&from=-7d&until=now&size=4
 		$response = go_loggly()->search(
 			array(
 				'q'     => '*',
-				'from'  => '-27d',
+				'from'  => '-30s',
 				'until' => 'now',
 				'size'  => '4',
 			)
