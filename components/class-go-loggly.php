@@ -48,7 +48,7 @@ class GO_Loggly
 
 		if ( isset( $functions[2]['file'] ) )
 		{
-			$log_item['file'] = array_pop( explode( '/', $functions[2]['file'] ) );
+			$log_item['file'] = $functions[2]['file'];
 		}//end if
 
 		if ( isset( $functions[3]['class'] ) )
@@ -61,17 +61,19 @@ class GO_Loggly
 			$log_item['function'] = $functions[3]['function'];
 		}//end if
 
-		$log_item['code'] = $code;
+		$log_item['code']    = $code;
 		$log_item['message'] = $message;
+		$log_item['data']    = serialize( $data );
 
 		$response = go_loggly()->inputs(
 			array(
-				'value' => $log_item['message'],
-				'from' => $log_item['code'],
+				'message' => $log_item['message'],
+				'from'    => $log_item['code'],
+				'data'    => $log_item['data'],
+				'file'    => $log_item['file'],
+				'line'    => $log_item['line'],
 			),
 			array(
-				$log_item['file'],
-				$log_item['line'],
 				$log_item['class'],
 				$log_item['function'],
 			)
