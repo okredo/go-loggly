@@ -6,6 +6,8 @@ class GO_Loggly
 
 	public function __construct()
 	{
+		add_filter( 'go_slog', array( $this, 'log' ), 9, 3 );
+		add_filter( 'go_loggly', array( $this, 'log' ), 10, 3 );
 	}//end __construct
 
 	/**
@@ -28,6 +30,53 @@ class GO_Loggly
 
 		return $this->config;
 	}//end config
+
+	/**
+	 * log to Loggly using their 'inputs' API
+	 *
+	 * @param $code string The code you want to log
+	 * @param $message string The message you want to log
+	 * @param $data string The data you want logged
+	 */
+	public function log( $code = '', $message = '', $data = '' )
+	{
+		$functions = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
+		if ( isset( $functions[2]['line'] ) )
+		{
+			$log_item['line'] = $functions[2]['line'];
+		}//end if
+
+		if ( isset( $functions[2]['file'] ) )
+		{
+			$log_item['file'] = array_pop( explode( '/', $functions[2]['file'] ) );
+		}//end if
+
+		if ( isset( $functions[3]['class'] ) )
+		{
+			$log_item['class'] = $functions[3]['class'];
+		}//end if
+
+		if ( isset( $functions[3]['function'] ) )
+		{
+			$log_item['function'] = $functions[3]['function'];
+		}//end if
+
+		$log_item['code'] = $code;
+		$log_item['message'] = $message;
+
+		$response = go_loggly()->inputs(
+			array(
+				'value' => $log_item['message'],
+				'from' => $log_item['code'],
+			),
+			array(
+				$log_item['file'],
+				$log_item['line'],
+				$log_item['class'],
+				$log_item['function'],
+			)
+		);
+	} //end log
 
 	/**
 	 * Write a log entry to Loggly
