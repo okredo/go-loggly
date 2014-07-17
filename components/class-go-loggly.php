@@ -41,43 +41,19 @@ class GO_Loggly
 	public function log( $code = '', $message = '', $data = '' )
 	{
 		$functions = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
-		if ( isset( $functions[2]['line'] ) )
-		{
-			$log_item['line'] = $functions[2]['line'];
-		}//end if
 
-		if ( isset( $functions[2]['file'] ) )
-		{
-			$log_item['file'] = $functions[2]['file'];
-		}//end if
-
-		if ( isset( $functions[3]['class'] ) )
-		{
-			$log_item['class'] = $functions[3]['class'];
-		}//end if
-
-		if ( isset( $functions[3]['function'] ) )
-		{
-			$log_item['function'] = $functions[3]['function'];
-		}//end if
-
-		$log_item['code']    = $code;
-		$log_item['message'] = $message;
-		$log_item['data']    = serialize( $data );
-
-		$response = go_loggly()->inputs(
-			array(
-				'message' => $log_item['message'],
-				'from'    => $log_item['code'],
-				'data'    => $log_item['data'],
-				'file'    => $log_item['file'],
-				'line'    => $log_item['line'],
-			),
-			array(
-				$log_item['class'],
-				$log_item['function'],
-			)
+		$log_item = array(
+			'from'    => ( isset( $functions[2]['file'], $functions[2]['line'] ) ) ? $functions[2]['file'] . ':' . $functions[2]['line'] : NULL,
+			'message' => $message,
+			'code'    => $code,
+			'data'    => serialize( $data ), // we flatten our data here so as to not use up loggly's 150 total parsed json index limit
 		);
+
+		$tags = array( 'go-slog' );
+		$tags['class'] = ( isset( $functions[3]['class'] ) ) ? $functions[3]['class'] : NULL;
+		$tags['function'] = ( isset( $functions[3]['function'] ) ) ? $functions[3]['function'] : NULL;
+
+		$response = go_loggly()->inputs( $log_item, $tags );
 	} //end log
 
 	/**
