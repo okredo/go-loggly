@@ -6,8 +6,7 @@ class GO_Loggly
 
 	public function __construct()
 	{
-		add_filter( 'go_slog', array( $this, 'log' ), 9, 3 );
-		add_filter( 'go_loggly', array( $this, 'log' ), 10, 3 );
+		add_filter( 'go_slog', array( $this, 'go_slog' ), 9, 3 );
 	}//end __construct
 
 	/**
@@ -32,29 +31,29 @@ class GO_Loggly
 	}//end config
 
 	/**
-	 * log to Loggly using their 'inputs' API
+	 * map go_slog calls to Loggly's 'inputs' API
 	 *
 	 * @param $code string The code you want to log
 	 * @param $message string The message you want to log
 	 * @param $data string The data you want logged
 	 */
-	public function log( $code = '', $message = '', $data = '' )
+	public function go_slog( $code = '', $message = '', $data = '' )
 	{
 		$functions = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
 
 		$log_item = array(
-			'from'    => ( isset( $functions[2]['file'], $functions[2]['line'] ) ) ? $functions[2]['file'] . ':' . $functions[2]['line'] : NULL,
-			'message' => $message,
 			'code'    => $code,
+			'message' => $message,
 			'data'    => serialize( $data ), // we flatten our data here so as to not use up loggly's 150 total parsed json index limit
+			'from'    => ( isset( $functions[2]['file'], $functions[2]['line'] ) ) ? $functions[2]['file'] . ':' . $functions[2]['line'] : NULL,
 		);
 
 		$tags = array( 'go-slog' );
-		$tags['class'] = ( isset( $functions[3]['class'] ) ) ? $functions[3]['class'] : NULL;
-		$tags['function'] = ( isset( $functions[3]['function'] ) ) ? $functions[3]['function'] : NULL;
+		$tags[] = ( isset( $functions[3]['class'] ) ) ? $functions[3]['class'] : NULL;
+		$tags[] = ( isset( $functions[3]['function'] ) ) ? $functions[3]['function'] : NULL;
 
 		$response = go_loggly()->inputs( $log_item, $tags );
-	} //end log
+	} //end go_slog
 
 	/**
 	 * Write a log entry to Loggly
