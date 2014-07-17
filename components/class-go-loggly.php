@@ -6,7 +6,7 @@ class GO_Loggly
 
 	public function __construct()
 	{
-		add_filter( 'go_slog', array( $this, 'go_slog' ), 9, 3 );
+		add_filter( 'go_slog', array( $this, 'go_slog' ), 0, 3 ); // priority is set such that it's the first item called
 	}//end __construct
 
 	/**
@@ -39,18 +39,18 @@ class GO_Loggly
 	 */
 	public function go_slog( $code = '', $message = '', $data = '' )
 	{
-		$functions = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
+		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
 
 		$log_item = array(
 			'code'    => $code,
 			'message' => $message,
-			'data'    => serialize( $data ), // we flatten our data here so as to not use up loggly's 150 total parsed json index limit
-			'from'    => ( isset( $functions[2]['file'], $functions[2]['line'] ) ) ? $functions[2]['file'] . ':' . $functions[2]['line'] : NULL,
+			'data'    => serialize( $data ), // we flatten our data here so as to not use up loggly's 150 total parsed json key limit. See https://community.loggly.com/customer/portal/questions/6544954-json-not-getting-parsed
+			'from'    => ( isset( $backtrace[2]['file'], $backtrace[2]['line'] ) ) ? $backtrace[2]['file'] . ':' . $backtrace[2]['line'] : NULL,
 		);
 
 		$tags = array( 'go-slog' );
-		$tags[] = ( isset( $functions[3]['class'] ) ) ? $functions[3]['class'] : NULL;
-		$tags[] = ( isset( $functions[3]['function'] ) ) ? $functions[3]['function'] : NULL;
+		$tags[] = ( isset( $backtrace[3]['class'] ) ) ? $backtrace[3]['class'] : NULL;
+		$tags[] = ( isset( $backtrace[3]['function'] ) ) ? $backtrace[3]['function'] : NULL;
 
 		$response = go_loggly()->inputs( $log_item, $tags );
 	} //end go_slog
