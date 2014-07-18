@@ -52,7 +52,7 @@ class GO_Loggly
 		$tags[] = ( isset( $backtrace[3]['class'] ) ) ? $backtrace[3]['class'] : NULL;
 		$tags[] = ( isset( $backtrace[3]['function'] ) ) ? $backtrace[3]['function'] : NULL;
 
-		$response = go_loggly()->inputs( $log_item, $tags );
+		$response = $this->inputs( $log_item, $tags );
 	} //end go_slog
 
 	/**
