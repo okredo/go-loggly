@@ -2,10 +2,16 @@
 
 class GO_Loggly
 {
-	private $config = NULL;
+	private $config = array();
+	public $admin;
 
 	public function __construct()
 	{
+		if ( is_admin() )
+		{
+			$this->admin();
+			$this->admin->config = $this->config;
+		} //end if
 	}//end __construct
 
 	/**
@@ -28,6 +34,23 @@ class GO_Loggly
 
 		return $this->config;
 	}//end config
+
+	/**
+	 * Admin singleton
+	 *
+	 * @return $this->admin
+	 */
+	public function admin()
+	{
+		include_once __DIR__ . '/class-go-loggly-admin.php';
+
+		if ( ! is_object( $this->admin ) )
+		{
+			$this->admin = new GO_Loggly_Admin();
+		}//end if
+
+		return $this->admin;
+	} //end admin
 
 	/**
 	 * Write a log entry to Loggly
@@ -153,3 +176,21 @@ class GO_Loggly
 		return $fetch_response_pager;
 	}//end search
 }//end class
+
+/**
+ * Singleton
+ *
+ * @global GO_Loggly $go_loggly
+ * @return GO_Loggly
+ */
+function go_loggly()
+{
+	global $go_loggly;
+
+	if ( ! isset( $go_loggly ) || ! $go_loggly )
+	{
+		$go_loggly = new GO_Loggly();
+	}//end if
+
+	return $go_loggly;
+} // END go_loggly
