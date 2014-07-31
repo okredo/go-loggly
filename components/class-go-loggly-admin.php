@@ -97,7 +97,8 @@ class GO_Loggly_Admin extends GO_Loggly
 		$this->var_dump = isset( $_GET['var_dump'] ) ? TRUE : FALSE;
 
 		$log_query = $this->log_query();
-wlog($log_query);
+
+		/*
 		$this->current_loggly_vars = $this->var_dump ? '&var_dump=yes' : '';
 		$this->current_loggly_vars .= 50 != $this->limit ? '&limit=' . $this->limit : '';
 		$this->current_loggly_vars .= 'curr_week' != $this->week ? '&week=' . $this->week : '';
@@ -106,6 +107,7 @@ wlog($log_query);
 		// Handle the two cases of a message value separately
 		$this->current_loggly_vars .= isset( $_POST['message'] ) && '' != $_POST['message'] ? '&message=' . base64_encode( $_POST['message'] ) : '';
 		$this->current_loggly_vars .= isset( $_GET['message'] ) && '' != $_GET['message'] ? '&message=' . $_GET['message'] : '';
+		*/
 
 		$js_loggly_url = 'tools.php?page=go-loggly-show' . preg_replace( '#&limit=[0-9]+|&week=(curr_week|prev_week)#', '', $this->current_loggly_vars );
 
@@ -118,7 +120,7 @@ wlog($log_query);
 		<div class="wrap view-loggly">
 			<?php screen_icon( 'tools' ); ?>
 			<h2>
-				View Slog
+				View Loggly (from -10 minutes to now)
 				<select name='go_loggly_week' class='select' id="go_loggly_week">
 					<?php echo $this->build_options( array( 'curr_week' => 'Current Week', 'prev_week' => 'Previous Week' ), $this->week ); ?>
 				</select>
@@ -128,7 +130,7 @@ wlog($log_query);
 			{
 				?>
 				<div id="message" class="updated">
-					<p>Slog cleared!</p>
+					<p>Loggly search cleared!</p>
 				</div>
 				<?php
 			}

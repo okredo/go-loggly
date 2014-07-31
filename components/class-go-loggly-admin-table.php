@@ -237,7 +237,7 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 		{
 			?>
 			<div id="message" class="error">
-				<p>Your Slog is empty.</p>
+				<p>Your log is empty.</p>
 			</div>
 			<?php
 		} //end else
