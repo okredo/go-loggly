@@ -2,7 +2,7 @@
 
 class GO_Loggly_Admin_Table extends WP_List_Table
 {
-	public $log_query = array();
+	public $log_query = NULL;
 
 	public function __construct()
 	{
@@ -11,7 +11,7 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 			array(
 				'singular' => 'loggly-item',  //singular name of the listed records
 				'plural'   => 'loggly-items', //plural name of the listed records
-				'ajax'     => FALSE,        //does this table support ajax?
+				'ajax'     => FALSE,          //does this table support ajax?
 			)
 		);
 	} //end __construct
@@ -37,11 +37,12 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 	 *
 	 * @param array $item this is used to store the loggly data you want to display.
 	 * @return String an index of the array $item
-	 */
+	//NOTE: keeping this in here for now; we know we'll require some serialized data handling for our custom log events.
 	public function column_loggly_data( $item )
 	{
 		return '<pre>' . $item['loggly_data'] . '</pre>';
 	} //end column_loggly_data
+	 */
 
 	/**
 	 * Return an array of the columns with keys that match the compiled items
@@ -51,11 +52,13 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 	public function get_columns()
 	{
 		$columns = array(
+			'loggly_item_num'=> 'Number',
+			'loggly_id'      => 'ID',
 			'loggly_date'    => 'Date',
+			'loggly_tags'    => 'Tags',
 			'loggly_host'    => 'Host',
-			'loggly_code'    => 'Code',
 			'loggly_message' => 'Message',
-			'loggly_data'    => 'Data',
+			//'loggly_data'    => 'Data',
 		);
 
 		return $columns;
@@ -71,57 +74,9 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 		static $row_class = '';
 		$row_class = ( '' == $row_class ) ? ' class="alternate"' : '';
 
-		if ( isset( $item['search'] ) )
-		{
-			$host    = isset( $_REQUEST['host'] ) ? $_REQUEST['host'] : '';
-			$code    = isset( $_REQUEST['code'] ) ? $_REQUEST['code'] : '';
-			// Handle the two cases of a message value seperately
-			$message = isset( $_POST['message'] ) ? $_POST['message'] : '';
-			$message = ! isset( $_POST['message'] ) && isset( $_GET['message'] ) ? base64_decode( $_GET['message'] ) : '';
-			?>
-			<tr class="search-controls">
-				<form action="tools.php?page=go-loggly-show&search=yes<?php echo go_loggly()->admin->current_loggly_vars; ?>" method="post">
-					<td></td>
-					<td>
-						<p>
-							<span>*</span><input type="text" name="host" value="<?php echo esc_attr( $host ); ?>" />
-						</p>
-					</td>
-					<td>
-						<p>
-							<span>*</span><input type="text" name="code" value="<?php echo esc_attr( $code ); ?>" />
-						</p>
-					</td>
-					<td>
-						<p>
-							<input type="text" name="message" value="<?php echo esc_attr( $message ); ?>" />
-						</p>
-					</td>
-					<td>
-						<p><button class="button">Search</button></p>
-					</td>
-				</form>
-			</tr>
-			<tr class="search-instructions">
-				<td></td>
-				<td colspan="4">* Results will only be returned if the column value matches exactly.</td>
-			</tr>
-			<?php
-			if ( 1 == count( $this->items ) )
-			{
-				?>
-				<tr class="no-items">
-					<td colspan="5">No log items found.</td>
-				</tr>
-				<?php
-			} //end if
-		} //end if
-		else
-		{
-			echo '<tr' . $row_class . '>';
-			echo $this->single_row_columns( $item );
-			echo '</tr>';
-		} //end else
+		echo '<tr' . $row_class . '>';
+		echo $this->single_row_columns( $item );
+		echo '</tr>';
 	} //end single_row
 
 	/**
@@ -146,19 +101,12 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 	 */
 	public function table_nav_top()
 	{
-		$clear_loggly_url   = wp_nonce_url( admin_url( 'admin-ajax.php?action=go-loggly-clear&week=' . go_loggly()->admin->week ), 'go_loggly_clear' );
-		$next_token       = isset( $_GET['next'] ) ? '&next=' . $_GET['next'] : '';
-		$csv_export_url   = wp_nonce_url( 'admin-ajax.php?action=go-loggly-csv' . go_loggly()->admin->current_loggly_vars . '&csv=yes' . $next_token, 'go_loggly_csv' );
-
 		$count = count( $this->items );
 		?>
 		<div class="tablenav <?php echo esc_attr( $which ); ?>" style="min-height: 43px;">
 			<div class="alignleft">
 				<p>
-					<select name='go_loggly_limit' class='select' id="go_loggly_limit">
-						<?php echo go_loggly()->admin->build_options( go_loggly()->admin->limits, go_loggly()->admin->limit ); ?>
-					</select>
-					Log Items
+					<?php echo $count; ?> Log Items
 				</p>
 			</div>
 			<div class="alignright">
@@ -166,14 +114,7 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 				if ( 1 < $count )
 				{
 					?>
-					<p>
-						<a href="<?php echo $csv_export_url; ?>" title="Export CSV" class="button export-csv">
-							Export CSV
-						</a>
-						<a href="<?php echo $clear_loggly_url; ?>" title="Clear Slog" class="button clear-loggly">
-							Clear Slog
-						</a>
-					</p>
+					<!-- preserve this space for something, possibly also export and clear -->
 					<?php
 				} // END if
 				?>
@@ -212,8 +153,6 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 	 */
 	public function prepare_items()
 	{
-		global $wpdb;
-
 		// Set columns
 		$columns  = $this->get_columns();
 		$hidden   = array();
@@ -254,14 +193,14 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 
 		foreach ( $this->log_query as $key => $row )
 		{
-			$microtime = explode( '.', $row['log_date'] );
-
 			$compiled[] = array(
-				'loggly_date'    => date( 'Y-m-d H:i:s', $microtime[0] ) . '.' . $microtime[1],
-				'loggly_host'    => esc_html( $row['host'] ),
-				'loggly_code'    => esc_html( $row['code'] ),
-				'loggly_message' => esc_html( $row['message'] ),
-				'loggly_data'    => esc_html( go_loggly()->admin->format_data( $row['data'] ) ),
+				'loggly_item_num' => esc_html( $key ),
+				'loggly_id'       => esc_html( $row->id ),
+				'loggly_date'     => esc_html( $row->event->syslog->timestamp ),
+				'loggly_tags'     => esc_html( $row->tags[0] ),
+				'loggly_host'     => esc_html( $row->event->syslog->host ),
+				'loggly_message'  => esc_html( $row->logmsg ),
+				//'loggly_data'    => esc_html( go_loggly()->admin->format_data( $row['data'] ) ),
 			);
 		} //end foreach
 

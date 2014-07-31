@@ -3,14 +3,8 @@
 class GO_Loggly_Admin extends GO_Loggly
 {
 	public $var_dump = FALSE;
-	public $week     = 'curr_week';
-	public $limit    = 100;
-	public $limits   = array(
-		'100'  => '100',
-		'250'  => '250',
-		'500'  => '500',
-		'1000' => '1000',
-	);
+	public $search_window = '-10m';
+	public $limit    = 50;
 	public $current_loggly_vars;
 	public $domain_suffix;
 
@@ -36,51 +30,6 @@ class GO_Loggly_Admin extends GO_Loggly
 	} //end admin_menu
 
 	/**
-	 * Delete all entries in the log
-	 */
-	public function clear_log()
-	{
-		if (
-			   ! current_user_can( 'manage_options' )
-			|| ! isset( $_REQUEST['_wpnonce'] )
-			|| ! isset( $_REQUEST['week'] )
-			|| ! isset( $this->domain_suffix[ $_REQUEST['week'] ] )
-			|| ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'go_loggly_clear' )
-		)
-		{
-			wp_die( 'Not cool', 'Unauthorized access', array( 'response' => 401 ) );
-		} //end if
-
-		// figure out the actual clear mechanism here
-		//$this->simple_db()->deleteDomain( $this->config['aws_sdb_domain'] . $this->domain_suffix[ $_REQUEST['week'] ] );
-
-		wp_redirect( admin_url( 'tools.php?page=go-loggly-show&loggly-cleared=yes' ) );
-		die;
-	} //end clear_log
-
-	/**
-	 * Formats data for output
-	 *
-	 * @param array $data
-	 * @return string formatted data
-	 */
-	public function format_data( $data )
-	{
-		if ( $this->var_dump == FALSE )
-		{
-			$data = print_r( unserialize( $data ), TRUE );
-		} // end if
-		else
-		{
-			ob_start();
-			var_dump( unserialize( $data ) );
-			$data = ob_get_clean();
-		} // end else
-
-		return $data;
-	} //end format_data
-
-	/**
 	 * Show the contents of the log
 	 *
 	 * @return Null
@@ -94,22 +43,13 @@ class GO_Loggly_Admin extends GO_Loggly
 
 		nocache_headers();
 
-		$this->var_dump = isset( $_GET['var_dump'] ) ? TRUE : FALSE;
-
+		// engage the loggly pager
 		$log_query = $this->log_query();
 
-		/*
-		$this->current_loggly_vars = $this->var_dump ? '&var_dump=yes' : '';
-		$this->current_loggly_vars .= 50 != $this->limit ? '&limit=' . $this->limit : '';
-		$this->current_loggly_vars .= 'curr_week' != $this->week ? '&week=' . $this->week : '';
-		$this->current_loggly_vars .= isset( $_REQUEST['host'] ) && '' != $_REQUEST['host'] ? '&host=' . $_REQUEST['host'] : '';
-		$this->current_loggly_vars .= isset( $_REQUEST['code'] ) && '' != $_REQUEST['code'] ? '&code=' . $_REQUEST['code'] : '';
-		// Handle the two cases of a message value separately
-		$this->current_loggly_vars .= isset( $_POST['message'] ) && '' != $_POST['message'] ? '&message=' . base64_encode( $_POST['message'] ) : '';
-		$this->current_loggly_vars .= isset( $_GET['message'] ) && '' != $_GET['message'] ? '&message=' . $_GET['message'] : '';
-		*/
-
-		$js_loggly_url = 'tools.php?page=go-loggly-show' . preg_replace( '#&limit=[0-9]+|&week=(curr_week|prev_week)#', '', $this->current_loggly_vars );
+		$js_loggly_url = sprintf(
+			'tools.php?page=go-loggly-show&search_window=%s',
+			$this->search_window
+		);
 
 		require_once __DIR__ . '/class-go-loggly-admin-table.php';
 
@@ -117,13 +57,27 @@ class GO_Loggly_Admin extends GO_Loggly
 
 		$go_loggly_table->log_query = $log_query;
 		?>
-		<div class="wrap view-loggly">
+		<div class="wrap view-loggly"><!-- as yet not styled -->
 			<?php screen_icon( 'tools' ); ?>
 			<h2>
-				View Loggly (from -10 minutes to now)
-				<select name='go_loggly_week' class='select' id="go_loggly_week">
-					<?php echo $this->build_options( array( 'curr_week' => 'Current Week', 'prev_week' => 'Previous Week' ), $this->week ); ?>
+				View Loggly from
+				<select name='go_loggly_search_window' class='select' id="go_loggly_search_window">
+					<?php
+						echo $this->build_options(
+							array(
+								'-10m' => 'Last 10 minutes',
+								'-30m' => 'Last 30 minutes',
+								'-1h'  => 'Last hour',
+								'-3h'  => 'Last 3 hours',
+								'-6h'  => 'Last 6 hours',
+								'-12h' => 'Last 12 hours',
+								'-24h' => 'Last day',
+							),
+							$this->search_window
+						);
+					?>
 				</select>
+				to now
 			</h2>
 			<?php
 			if ( isset( $_GET['loggly-cleared'] ) )
@@ -144,46 +98,21 @@ class GO_Loggly_Admin extends GO_Loggly
 	} //end show_log
 
 	/**
-	 * Returns relevant log items from the log
+	 * Returns a GO_Loggly_Search_Results_Pager containing relevant log entries
 	 *
-	 * @return array log data
+	 * @return GO_Loggly_Search_Results_Pager log entry pager
 	 */
 	public function log_query()
 	{
-		$this->limit = isset( $_GET['limit'] ) && isset( $this->limits[ $_GET['limit'] ] ) ? $_GET['limit'] : $this->limit;
-		$this->week  = isset( $_GET['week'] ) && isset( $this->domain_suffix[ $_GET['week'] ] ) ? $_GET['week'] : $this->week;
-		$next_token  = isset( $_GET['next'] ) ? base64_decode( $_GET['next'] ) : NULL;
+		$this->search_window  = isset( $_GET['search_window'] ) && isset( $this->domain_suffix[ $_GET['search_window'] ] ) ? $_GET['search_window'] : $this->search_window;
 
-		return go_loggly()->search( '*&from=-30s&until=now' );
+		$search_query_str = sprintf(
+			'*&from=%s&until=now',
+			$this->search_window
+		);
+
+		return go_loggly()->search( $search_query_str );
 	} //end log_query
-
-	/**
-	 * Return SQL limits for the three search/filter fields
-	 *
-	 * @return string $limits limits for the query
-	 */
-	public function search_limits()
-	{
-		$limits = '';
-
-		if ( isset( $_REQUEST['host'] ) && '' != $_REQUEST['host'] )
-		{
-			$limits .= " AND host = '" . esc_sql( $_REQUEST['host'] ) . "'";
-		} // END if
-
-		if ( isset( $_REQUEST['code'] ) && '' != $_REQUEST['code'] )
-		{
-			$limits .= " AND code = '" . esc_sql( $_REQUEST['code'] ) . "'";
-		} // END if
-
-		if ( isset( $_REQUEST['message'] ) && '' != $_REQUEST['message'] )
-		{
-			$message = isset( $_GET['message'] ) ? base64_decode( $_GET['message'] ) : $_POST['message'];
-			$limits .= " AND message LIKE '%" . esc_sql( $message ) . "%'";
-		} // END if
-
-		return $limits;
-	} //end search_limits
 
 	/**
 	 * Helper function to build select options
