@@ -84,7 +84,7 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 	 *
 	 * @param string $which "top" to display the nav, else "bottom"
 	 */
-	public function display_tablenav( $which )
+	public function extra_tablenav( $which )
 	{
 		if ( 'top' == $which )
 		{
@@ -94,7 +94,7 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 		{
 			$this->table_nav_bottom();
 		} //end else
-	} //end display_tablenav
+	} //end extra_tablenav
 
 	/**
 	 * Display nav items for above the table
@@ -189,7 +189,7 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 	 */
 	public function compile_posts()
 	{
-		$compiled = array( array( 'search' => TRUE ) );
+		$compiled = array();
 
 		foreach ( $this->log_query as $key => $row )
 		{

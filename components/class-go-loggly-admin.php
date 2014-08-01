@@ -48,7 +48,7 @@ class GO_Loggly_Admin extends GO_Loggly
 
 		$this->current_loggly_vars .= '-30s' != $this->search_window ? '&search_window=' . $this->search_window : '';
 
-		$js_loggly_url = 'tools.php?page=go-loggly-show' . preg_replace( '#&search_window=(-30s|-10m|-30m|-1h|-3h|-3h|-6h|-12h|-24h)#', '', $this->current_loggly_vars );
+		$js_loggly_url = 'tools.php?page=go-loggly-show' . preg_replace( '#&search_window=(-30s|-5m|-10m|-30m|-1h|-3h|-3h|-6h|-12h|-24h)#', '', $this->current_loggly_vars );
 
 		require_once __DIR__ . '/class-go-loggly-admin-table.php';
 
@@ -65,6 +65,7 @@ class GO_Loggly_Admin extends GO_Loggly
 						echo $this->build_options(
 							array(
 								'-30s' => 'Last 30 seconds',
+								'-5m' => 'Last 5 minutes',
 								'-10m' => 'Last 10 minutes',
 								'-30m' => 'Last 30 minutes',
 								'-1h'  => 'Last hour',
