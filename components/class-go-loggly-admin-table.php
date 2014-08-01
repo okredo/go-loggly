@@ -129,21 +129,21 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 	 */
 	public function table_nav_bottom()
 	{
-		if ( '' != Go_Slog::simple_db()->NextToken )
-		{
-			$next_link = 'tools.php?page=go-loggly-show' . go_loggly()->admin->current_loggly_vars . '&next=' . base64_encode( Go_Slog::simple_db()->NextToken );
+		//if ( '' != Go_Slog::simple_db()->NextToken )
+		//{
+			//$next_link = 'tools.php?page=go-loggly-show' . go_loggly()->admin->current_loggly_vars . '&next=' . base64_encode( Go_Slog::simple_db()->NextToken );
 			?>
 			<div class="tablenav bottom">
 				<div class="tablenav-pages">
 					<span class="pagination-links">
-						<a class="next-page" href="<?php echo $next_link; ?>">
-							Next Page &rsaquo;
-						</a>
+<!--						<a class="next-page" href="--><?php //echo $next_link; ?><!--">-->
+<!--							Next Page &rsaquo;-->
+<!--						</a>-->
 					</span>
 				</div>
 			</div>
 			<?php
-		} //end if
+		//} //end if
 	} //end table_nav_bottom
 
 	/**

@@ -3,7 +3,7 @@
 class GO_Loggly_Admin extends GO_Loggly
 {
 	public $var_dump = FALSE;
-	public $search_window = '-10m';
+	public $search_window = '-30s';
 	public $limit    = 50;
 	public $current_loggly_vars;
 	public $domain_suffix;
@@ -46,10 +46,9 @@ class GO_Loggly_Admin extends GO_Loggly
 		// engage the loggly pager
 		$log_query = $this->log_query();
 
-		$js_loggly_url = sprintf(
-			'tools.php?page=go-loggly-show&search_window=%s',
-			$this->search_window
-		);
+		$this->current_loggly_vars .= '-30s' != $this->search_window ? '&search_window=' . $this->search_window : '';
+
+		$js_loggly_url = 'tools.php?page=go-loggly-show' . preg_replace( '#&search_window=(-30s|-10m|-30m|-1h|-3h|-3h|-6h|-12h|-24h)#', '', $this->current_loggly_vars );
 
 		require_once __DIR__ . '/class-go-loggly-admin-table.php';
 
@@ -65,6 +64,7 @@ class GO_Loggly_Admin extends GO_Loggly
 					<?php
 						echo $this->build_options(
 							array(
+								'-30s' => 'Last 30 seconds',
 								'-10m' => 'Last 10 minutes',
 								'-30m' => 'Last 30 minutes',
 								'-1h'  => 'Last hour',
@@ -104,7 +104,7 @@ class GO_Loggly_Admin extends GO_Loggly
 	 */
 	public function log_query()
 	{
-		$this->search_window  = isset( $_GET['search_window'] ) && isset( $this->domain_suffix[ $_GET['search_window'] ] ) ? $_GET['search_window'] : $this->search_window;
+		$this->search_window  = isset( $_GET['search_window'] ) ? $_GET['search_window'] : $this->search_window;
 
 		$search_query_str = sprintf(
 			'*&from=%s&until=now',
