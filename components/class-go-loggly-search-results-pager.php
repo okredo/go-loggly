@@ -36,6 +36,15 @@ class GO_Loggly_Search_Results_Pager implements Iterator
 	}//end count
 
 	/**
+	 * Total number of pages (assuming 50 records / page) in the list.
+	 * @return integer number of pages in list
+	 */
+	public function page_count()
+	{
+		return $this->_page_count;
+	}//end count
+
+	/**
 	 * Rewind to the beginning
 	 */
 	public function rewind()
@@ -175,6 +184,8 @@ class GO_Loggly_Search_Results_Pager implements Iterator
 			( $next ) ? $this->_uri . '&page=' . $next : $this->_uri,
 			$this->_orig_query_args
 		);
+
+wlog( ( $next ) ? $this->_uri . '&page=' . $next : $this->_uri);
 
 		if (
 			is_wp_error( $response )

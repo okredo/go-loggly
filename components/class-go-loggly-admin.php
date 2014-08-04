@@ -46,15 +46,33 @@ class GO_Loggly_Admin extends GO_Loggly
 		// engage the loggly pager
 		$log_query = $this->log_query();
 
+		// display error message and discontinue table display
+		if ( is_wp_error( $log_query ) )
+		{
+			?>
+			<div id="message" class="updated">
+				<p>
+					<?php echo $log_query->get_error_message(); ?>
+				</p>
+			</div>
+			<?php
+			return;
+		}
+
+		// valid pager returned, continue reporting
+wlog( array( 'log_query', $log_query ) );
+
 		$this->current_loggly_vars .= '-30s' != $this->search_window ? '&search_window=' . $this->search_window : '';
 
-		$js_loggly_url = 'tools.php?page=go-loggly-show' . preg_replace( '#&search_window=(-30s|-5m|-10m|-30m|-1h|-3h|-3h|-6h|-12h|-24h)#', '', $this->current_loggly_vars );
+		$js_loggly_url = 'tools.php?page=go-loggly-show' . preg_replace( '#&search_window=(-30s|-2m|-5m|-10m|-30m|-1h|-3h|-3h|-6h|-12h|-24h)#', '', $this->current_loggly_vars );
 
 		require_once __DIR__ . '/class-go-loggly-admin-table.php';
 
 		$go_loggly_table = new GO_Loggly_Admin_Table();
 
+		// assign the pager to the List_Table
 		$go_loggly_table->log_query = $log_query;
+
 		?>
 		<div class="wrap view-loggly"><!-- as yet not styled -->
 			<?php screen_icon( 'tools' ); ?>
@@ -65,6 +83,7 @@ class GO_Loggly_Admin extends GO_Loggly
 						echo $this->build_options(
 							array(
 								'-30s' => 'Last 30 seconds',
+								'-2m' => 'Last 2 minutes',
 								'-5m' => 'Last 5 minutes',
 								'-10m' => 'Last 10 minutes',
 								'-30m' => 'Last 30 minutes',
@@ -91,7 +110,7 @@ class GO_Loggly_Admin extends GO_Loggly
 			}
 
 			$go_loggly_table->prepare_items();
-			$go_loggly_table->custom_display();
+			$go_loggly_table->display();
 			?>
 			<input type="hidden" name="js_loggly_url" value="<?php echo esc_attr( $js_loggly_url ); ?>" id="js_loggly_url" />
 		</div>
