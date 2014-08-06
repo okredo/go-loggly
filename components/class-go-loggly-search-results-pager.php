@@ -185,8 +185,6 @@ class GO_Loggly_Search_Results_Pager implements Iterator
 			$this->_orig_query_args
 		);
 
-wlog( ( $next ) ? $this->_uri . '&page=' . $next : $this->_uri);
-
 		if (
 			is_wp_error( $response )
 			|| ! $this->_valid_response( $response )

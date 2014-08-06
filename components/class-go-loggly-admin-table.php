@@ -29,8 +29,6 @@ class GO_Loggly_Admin_Table extends WP_List_Table
 		//Number of elements in your table?
 		$total_items = $this->log_query->count(); //return the total number of affected rows
 
-wlog( ('$total_items' . $total_items) );
-
 		//How many to display per page?
 		$per_page = 50;
 
@@ -38,9 +36,6 @@ wlog( ('$total_items' . $total_items) );
 		//$this->log_query->page_count() == 0 ? $total_pages = 1 : $total_pages = $this->log_query->page_count();
 
 		$current_page = $this->get_pagenum();
-
-wlog( ('$current_page' . $current_page) );
-wlog( ('$total_pages calcd' . ceil( $total_items / $per_page ) ) );
 
 		//
 		//Register the pagination
@@ -59,14 +54,9 @@ wlog( ('$total_pages calcd' . ceil( $total_items / $per_page ) ) );
 		$this->_column_headers = array( $columns, $hidden, $sortable );
 
 		// fetch items
-		// get current page from WP_List_Table's pagination url vars, to assist with directing result paging
-		$next_page  = isset( $_GET['paged'] ) ? base64_decode( $_GET['paged'] ) : NULL;
-		if ( $next_page )
-		{
-			$this->log_query->load( $next_page ); // fetch the posts for that page only
-		}
+		$data = $this->compile_posts();
 
-		$this->items = $this->compile_posts();
+		$this->items = $data;
 	} //end prepare_items
 
 	/**
@@ -97,6 +87,13 @@ wlog( ('$total_pages calcd' . ceil( $total_items / $per_page ) ) );
 	{
 		$compiled = array();
 
+		// get current page from WP_List_Table's pagination url vars, to assist with directing result paging
+		$next_page  = isset( $_GET['paged'] ) ? base64_decode( $_GET['paged'] ) : NULL;
+		if ( $next_page )
+		{
+			$this->log_query->next();
+		}
+
 		foreach ( $this->log_query->get_objects() as $key => $value )
 		{
 			$compiled[] = array(
@@ -109,7 +106,7 @@ wlog( ('$total_pages calcd' . ceil( $total_items / $per_page ) ) );
 				//'loggly_data'    => esc_html( go_loggly()->admin->format_data( $row['data'] ) ),
 			);
 		} //end foreach
-wlog(array('compiled', $compiled ));
+
 		return $compiled;
 	} //end compile_posts
 
@@ -230,8 +227,8 @@ wlog(array('compiled', $compiled ));
 		// get current page from WP_List_Table's pagination url vars, to assist with directing result paging
 		$next_page  = isset( $_GET['paged'] ) ? base64_decode( $_GET['paged'] ) : NULL;
 
-		if ( $next_page <= $this->log_query->page_count() )
-		{
+		//if ( $next_page < $this->log_query->page_count() )
+		//{
 			?>
 			<div class="tablenav bottom">
 				<div class="tablenav-pages">
@@ -240,7 +237,7 @@ wlog(array('compiled', $compiled ));
 				</div>
 			</div>
 			<?php
-		} //end if
+		//} //end if
 	} //end table_nav_bottom
 }
 //end GO_Loggly_Admin_Table

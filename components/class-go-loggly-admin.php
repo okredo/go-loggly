@@ -60,8 +60,6 @@ class GO_Loggly_Admin extends GO_Loggly
 		}
 
 		// valid pager returned, continue reporting
-wlog( array( 'log_query', $log_query ) );
-
 		$this->current_loggly_vars .= '-30s' != $this->search_window ? '&search_window=' . $this->search_window : '';
 
 		$js_loggly_url = 'tools.php?page=go-loggly-show' . preg_replace( '#&search_window=(-30s|-2m|-5m|-10m|-30m|-1h|-3h|-3h|-6h|-12h|-24h)#', '', $this->current_loggly_vars );
